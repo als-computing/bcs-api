@@ -1,0 +1,8 @@
+conda create --name bluesky python=3.8
+conda activate bluesky
+conda install future
+conda install -c conda-forge jupyterlab
+conda install intake
+conda install -c conda-forge caproto ophyd nodejs
+conda update pip setuptools numpy
+conda install git zarr scikit-image
