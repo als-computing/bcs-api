@@ -2,9 +2,17 @@
 
 ## Overview: Combining LabView BCS with Bluesky
 
+### BCS Single Motor Scan
+
 This notebook demonstrates how the LabView Beamline Control System API can be used to implement a "Single Motor Scan" as an `ophyd` device. Furthermore, this "Single Motor Scan" device can be initiated by the `bluesky` Run Engine as a `fly` plan with data avaliable in a bluesky run document.
 
 Open `BCS-API_06_BlueskyFlying_M201Roll_BcszSync_nb.ipynb` or `BCS-API_06_BlueskyFlying_M201Roll_BcszSync_nb.html` for details.
+
+### BCS Single Motor _Flying_ Scan
+
+This notebook demonstrates how the LabView Beamline Control System API can be used to implement a "Single Motor Flying Scan" as an `ophyd` device. Furthermore, this "Single Motor Flying Scan" device can be initiated by the `bluesky` Run Engine as a `fly` plan with data avaliable in a bluesky run document.
+
+Open `BCS-API_07_BlueskyFlying_FlyingBeamlineEnergy_BcszSync_nb.ipynb` or `BCS-API_07_BlueskyFlying_FlyingBeamlineEnergy_BcszSync_nb.html` for details.
 
 ---
 
