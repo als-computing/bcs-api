@@ -14,6 +14,12 @@ This notebook demonstrates how the LabView Beamline Control System API can be us
 
 Open `BCS-API_07_BlueskyFlying_FlyingBeamlineEnergy_BcszSync_nb.ipynb` or `BCS-API_07_BlueskyFlying_FlyingBeamlineEnergy_BcszSync_nb.html` for details.
 
+### BCS Trajectory Scan
+
+This notebook demonstrates how the LabView Beamline Control System API can be used to implement a "Trajectory Scan" as an `ophyd` device. Furthermore, this "Trajectory Scan" device can be initiated by the `bluesky` Run Engine as a `fly` plan with data avaliable in a bluesky run document.
+
+Open `ALS-DXR-0066_XMCD_06.ipynb` or `ALS-DXR-0066_XMCD_06.html` for details.
+
 ---
 
 ---
