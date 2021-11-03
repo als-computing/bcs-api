@@ -441,6 +441,7 @@ class BcsSingleMotorFlyingScan(Device):
     velocity = Component(Signal, kind="config", value=0.)
     num_scans = Component(Signal, kind="config", value=1)
     bidirectional = Component(Signal, kind="config", value=False)
+    shift_flying_data = Component(Signal, kind="config", value=False)
     final_move = Component(Signal, kind="config", value="Stay")
     memo = Component(Signal, kind="config", value='')
     filename_pattern = Component(Signal,kind="config", value="*.txt")
@@ -460,6 +461,7 @@ class BcsSingleMotorFlyingScan(Device):
             motor: str, start: float, stop: float, step: float, 
             velocity: float = 0., 
             num_scans: int = 1, bidirect: bool = False, 
+            shift_flying_data: bool = False,
             final: str = "Stay",
             memo: str = '',
             filename_pattern: str = "*.txt", 
@@ -476,6 +478,7 @@ class BcsSingleMotorFlyingScan(Device):
         self.velocity.put(velocity)
         self.num_scans.put(num_scans)
         self.bidirectional.put(bidirect)
+        self.shift_flying_data.put(shift_flying_data),
         self.final_move.put(final)
         self.memo.put(memo)
         self.filename_pattern.put(filename_pattern)
@@ -529,6 +532,7 @@ class BcsSingleMotorFlyingScan(Device):
             velocity_units=velocity_value, 
             number_of_scans=self.num_scans.get(),
             bidirect=self.bidirectional.get(),
+            shift_ai=self.shift_flying_data.get(),
             at_end_of_scan=self.final_move.get(), 
             description=self.memo.get(),
             file_pattern=self.filename_pattern.get(),
@@ -623,8 +627,13 @@ class BcsSigFlyScanFlyer(FlyerInterface, BcsSingleMotorFlyingScan):
         # TODO: Add hinted signals
         
         ai_names = self._bcs.list_ais()['names']
-        
         scan_motor = self.motor_name.get()
+
+        # Workaround for PANDAS column name de-duplication
+        ai_names = [
+            f"{ai_name} dot 1" if ai_name==scan_motor else ai_name 
+                for ai_name in ai_names]
+        
         scan_channels = [
             "Time of Day", 
             "Time (s)", 
@@ -644,7 +653,9 @@ class BcsSigFlyScanFlyer(FlyerInterface, BcsSingleMotorFlyingScan):
         
         if self.yield_array_events.get():
             # This is only for array events
-            reading_size = 1 + (self.last_value.get() - self.first_value.get()) / self.step_value.get()
+            reading_size = 1 + max(
+                (self.last_value.get() - self.first_value.get()) / self.step_value.get(),
+                0)
             array_descriptor_keys = {
                 key: prepend_dimension_to_descriptor_key(
                     key=value, size=int(reading_size), dim_name="reading") 
@@ -724,11 +735,20 @@ class BcsSigFlyScanFlyer(FlyerInterface, BcsSingleMotorFlyingScan):
                 timestamp = data_df.iloc[0][timestamp_col]
                 data_df.drop(timestamp_col, axis=1, inplace=True, errors="ignore")
             
-                event = make_array_event(
-                    data_df, timestamp, sanitize_event_data_keys, stream_descriptor)
+                reading_size = 1 + int(max(
+                    (self.last_value.get() - self.first_value.get()) / self.step_value.get(),
+                    0))
+                
+                for seq_num in range(int(round(len(data_df)/reading_size))):
+                    event = make_array_event(
+                        data_df.iloc[
+                            seq_num*reading_size:(seq_num+1)*reading_size], 
+                        timestamp, 
+                        sanitize_event_data_keys, 
+                        stream_descriptor)
 
-                # yield 'event', event
-                yield event
+                    # yield 'event', event
+                    yield event
         
             
             else:
@@ -861,7 +881,10 @@ class BcsTrajectoryScan(Device):
                 flying_motor = ''
             normal_motors = []
             for motor in input_file_motor_header.split('\t'):
-                normal_motors.append(motor)
+                if motor.strip() != '':
+                    normal_motors.append(motor)
+            # print(f"{normal_motors = }")
+            # print(f"{len(normal_motors) = }")
 
             # Extract metadata needed for stream event descriptors
             stream_event_sizes = []  # Zero for 'file' command
@@ -1114,6 +1137,7 @@ class BcsTrajScanFlyer(FlyerInterface, BcsTrajectoryScan):
             # Workaround for current behavior of Trajectory Scan
             scan_channels += [f"{flying_motor} Actual"]
         scan_channels += ai_names
+        print(f"{scan_channels = }")
       
         # DataFrame enables convenience functions from 'bcs_events'
         data_df = pd.DataFrame(columns=scan_channels)
